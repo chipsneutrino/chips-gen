@@ -55,10 +55,20 @@ Modified by Josh Tingey (j.tingey.16@ucl.ac.uk) for the CHIPS experiment
 
 // Default values to the "chips5" geometry
 double detHalfHeight = 6.00;
-double detRadius = 12.66;
+double detRadius = 12.5;
 double overburden = 50.0;
 bool forTraining = false;
 double xDirThreshold = 0.90;
+
+static unsigned long int next = 1;
+
+double randomGen() 
+{
+	next=next*1103515245+123345;
+	unsigned temp=(unsigned)(next/65536) % 32768;
+	
+	return ( temp + 1.0 ) / 32769.0;
+}
 
 bool KeepEvent(CRYParticle* p, double &newX, double &newY, double &newE);
 
@@ -66,14 +76,15 @@ int main(int argc, const char *argv[])
 {
 	std::string configFile = "default.conf"; 	// default path to configuration file
 	int nEv = 1000; 						 	// default number of cosmic-ray events to produce
-	std::string geoType = "chips5";				// default geometry to use
+	std::string geoType = "chips_1200";			// default geometry to use
 
 	if (argc < 2) 
 	{
-		std::cout << "usage " << argv[0] << " <config file name> <N events> <Geometry Type> <For Training>\n";
+		std::cout << "usage " << argv[0] << " <config file name> <N events> <Geometry Type> <seed> <For Training>\n";
 		std::cout << "Config file = " << configFile << " by default\n";
 		std::cout << "N events = " << nEv << " by default\n";
-		std::cout << "Geometry = " << geoType << " by default. Options <chipsM>, <chips10>, <chips5>, <realistic>\n";
+		std::cout << "Geometry = " << geoType << " by default\n";
+		std::cout << "Seed = " << next << " by default\n";
 		std::cout << "For Training = " << forTraining << " by default. If true, imposes x>0.97\n";
 		return 0;
 	}
@@ -81,30 +92,49 @@ int main(int argc, const char *argv[])
 	configFile = argv[1];
 	if (argc > 2) nEv=atoi(argv[2]);
 	if (argc > 3) geoType = argv[3];
-	if (argc > 4) forTraining = argv[4];
+	if (argc > 4) next = atoi(argv[4]);
+	if (argc > 5) forTraining = argv[5];
 
-	if(geoType == "chipsM")
-	{
-		detHalfHeight = 1.66;
-		detRadius = 1.72;
-		overburden = 50.0;
-	}
-	else if(geoType == "chips10")
-	{
-		detHalfHeight = 10.00;
-		detRadius = 12.66;
-		overburden = 50.0;
-	}
-	else if(geoType == "chips5")
+	else if(geoType == "chips_1200")
 	{
 		detHalfHeight = 6.00;
-		detRadius = 12.66;
+		detRadius = 12.5;
 		overburden = 50.0;
 	}
-	else if(geoType == "realistic")
+	else if(geoType == "chips_1000")
+	{
+		detHalfHeight = 5.00;
+		detRadius = 12.5;
+		overburden = 52.0;
+	}
+	else if(geoType == "chips_800")
 	{
 		detHalfHeight = 4.00;
-		detRadius = 12.66;
+		detRadius = 12.5;
+		overburden = 54.0;
+	}
+	else if(geoType == "chips_600")
+	{
+		detHalfHeight = 3.00;
+		detRadius = 12.5;
+		overburden = 56.0;
+	}
+	else if(geoType == "chips_400")
+	{
+		detHalfHeight = 2.00;
+		detRadius = 12.5;
+		overburden = 58.0;
+	}
+	else if(geoType == "chips_275")
+	{
+		detHalfHeight = 1.37;
+		detRadius = 12.5;
+		overburden = 59.25;
+	}
+	else if(geoType == "chips_realistic_v1")
+	{
+		detHalfHeight = 4.00;
+		detRadius = 12.5;
 		overburden = 6.0;
 	}
 	else
@@ -126,7 +156,11 @@ int main(int argc, const char *argv[])
 	}
 
 	// Parse the contents of the setup file
-	CRYSetup *setup=new CRYSetup(setupString, std::getenv("CRYDATA"));
+	CRYSetup *setup = new CRYSetup(setupString, std::getenv("CRYDATA"));
+
+	// We need to set the random number generator so things change between jobs
+	CRYUtils *utils = setup->getUtils();
+	utils->setRandomFunction(randomGen);
 
 	// Setup the CRY event generator
 	CRYGenerator gen(setup);
@@ -186,7 +220,6 @@ bool KeepEvent(CRYParticle* p, double &newX, double &newY, double &newE)
 {
 	// If we only want events for network training we insist that the x-direction value is above some threshold
 	if(forTraining && (p->u() < xDirThreshold)) return false;
-
 
 	// The muons are generated at "sea level" we treat this as being the level of the water in the pit!
 	// Apply muon energy threshold for traversing water overburden ~ E_thres = (2.2 Mev/cm * 100) * 50m = 10 GeV.
