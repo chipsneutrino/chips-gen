@@ -53,7 +53,7 @@ Modified by Josh Tingey (j.tingey.16@ucl.ac.uk) for the CHIPS experiment
 #include <stdlib.h>
 #include <cstdlib>
 
-// Default values to the "chips5" geometry
+// Default values to the "chips_1200" geometry
 double detHalfHeight = 6.00;
 double detRadius = 12.5;
 double overburden = 50.0;
@@ -62,23 +62,24 @@ double xDirThreshold = 0.90;
 
 static unsigned long int next = 1;
 
-double randomGen() 
+double randomGen()
 {
-	next=next*1103515245+123345;
-	unsigned temp=(unsigned)(next/65536) % 32768;
-	
-	return ( temp + 1.0 ) / 32769.0;
+	next = next * 1103515245 + 123345;
+	unsigned temp = (unsigned)(next / 65536) % 32768;
+
+	return (temp + 1.0) / 32769.0;
 }
 
-bool KeepEvent(CRYParticle* p, double &newX, double &newY, double &newE);
+bool KeepEvent(CRYParticle *p, double &newX, double &newY, double &newE);
 
-int main(int argc, const char *argv[]) 
+int main(int argc, const char *argv[])
 {
-	std::string configFile = "default.conf"; 	// default path to configuration file
-	int nEv = 1000; 						 	// default number of cosmic-ray events to produce
-	std::string geoType = "chips_1200";			// default geometry to use
+	std::string configFile = std::getenv("CHIPSGEN");
+	configFile += "/config/default.conf"; // default path to configuration file
+	int nEv = 1000;						  // default number of cosmic-ray events to produce
+	std::string geoType = "chips_1200";	  // default geometry to use
 
-	if (argc < 2) 
+	if (argc < 1)
 	{
 		std::cout << "usage " << argv[0] << " <config file name> <N events> <Geometry Type> <seed> <For Training>\n";
 		std::cout << "Config file = " << configFile << " by default\n";
@@ -89,49 +90,54 @@ int main(int argc, const char *argv[])
 		return 0;
 	}
 
-	configFile = argv[1];
-	if (argc > 2) nEv=atoi(argv[2]);
-	if (argc > 3) geoType = argv[3];
-	if (argc > 4) next = atoi(argv[4]);
-	if (argc > 5) forTraining = argv[5];
+	if (argc > 1)
+		configFile = argv[1];
+	if (argc > 2)
+		nEv = atoi(argv[2]);
+	if (argc > 3)
+		geoType = argv[3];
+	if (argc > 4)
+		next = atoi(argv[4]);
+	if (argc > 5)
+		forTraining = argv[5];
 
-	else if(geoType == "chips_1200")
+	else if (geoType == "chips_1200")
 	{
 		detHalfHeight = 6.00;
 		detRadius = 12.5;
 		overburden = 50.0;
 	}
-	else if(geoType == "chips_1000")
+	else if (geoType == "chips_1000")
 	{
 		detHalfHeight = 5.00;
 		detRadius = 12.5;
 		overburden = 52.0;
 	}
-	else if(geoType == "chips_800")
+	else if (geoType == "chips_800")
 	{
 		detHalfHeight = 4.00;
 		detRadius = 12.5;
 		overburden = 54.0;
 	}
-	else if(geoType == "chips_600")
+	else if (geoType == "chips_600")
 	{
 		detHalfHeight = 3.00;
 		detRadius = 12.5;
 		overburden = 56.0;
 	}
-	else if(geoType == "chips_400")
+	else if (geoType == "chips_400")
 	{
 		detHalfHeight = 2.00;
 		detRadius = 12.5;
 		overburden = 58.0;
 	}
-	else if(geoType == "chips_275")
+	else if (geoType == "chips_275")
 	{
 		detHalfHeight = 1.37;
 		detRadius = 12.5;
 		overburden = 59.25;
 	}
-	else if(geoType == "chips_realistic_v1")
+	else if (geoType == "chips_realistic_v1")
 	{
 		detHalfHeight = 4.00;
 		detRadius = 12.5;
@@ -149,7 +155,7 @@ int main(int argc, const char *argv[])
 	char buffer[1000];
 
 	std::string setupString("");
-	while (!inputFile.getline(buffer,1000).eof()) 
+	while (!inputFile.getline(buffer, 1000).eof())
 	{
 		setupString.append(buffer);
 		setupString.append(" ");
@@ -166,46 +172,47 @@ int main(int argc, const char *argv[])
 	CRYGenerator gen(setup);
 
 	// Generate the events
-	std::vector<CRYParticle*> *ev=new std::vector<CRYParticle*>;
+	std::vector<CRYParticle *> *ev = new std::vector<CRYParticle *>;
 	int i = 0;
-	while (i<nEv)
+	while (i < nEv)
 	{
 		// Generate the event
 		ev->clear();
 		gen.genEvent(ev);
-		CRYParticle* p = (*ev)[0];
+		CRYParticle *p = (*ev)[0];
 
 		// Check if we want the event. If we do, work out
 		// the values of x, y and E just above the detector
 		double newX = 0.0;
 		double newY = 0.0;
 		double newE = 0.0;
-		if(KeepEvent(p, newX, newY, newE)) // That's a good event. Yay!
+		if (KeepEvent(p, newX, newY, newE)) // That's a good event. Yay!
 		{
 			// Write a nuance style vec file
 			std::cout << "$ begin" << std::endl;
 			std::cout << "$ nuance " << 100 << std::endl;
-	
+
 			// Only use the first muon for now, and set the event vertex
 			// Convert to cm, and set z to be about 1m above the detector
-			std::cout << "$ vertex " << newX*100 << " " 
-									 << newY*100 << " " 
-									 << (1.0+detHalfHeight)*100 << " " // 1m above the detector
-									 << "0" << std::endl;
+			std::cout << "$ vertex " << newX * 100 << " "
+					  << newY * 100 << " "
+					  << (1.0 + detHalfHeight) * 100 << " " // 1m above the detector
+					  << "0" << std::endl;
 			// Need two dummy lines for the neutrino and target
 			std::cout << "$ track 13 " << newE << " 0 0 -1 -1" << std::endl;
 			std::cout << "$ track 8016 14890 -999 -999 -999 -1" << std::endl;
-			std::cout << "$ track 13" << " " << newE // The energy of the muon 1m above the detector
-									  << " " << p->u()
-									  << " " << p->v()
-									  << " " << p->w()
-									  << " 0" << std::endl;
+			std::cout << "$ track 13"
+					  << " " << newE // The energy of the muon 1m above the detector
+					  << " " << p->u()
+					  << " " << p->v()
+					  << " " << p->w()
+					  << " 0" << std::endl;
 			std::cout << "$ end" << std::endl;
-			++i; 
+			++i;
 		}
 
 		// Clean up to prevent memory leaks
-		for(unsigned int v = 0; v < ev->size(); ++v)
+		for (unsigned int v = 0; v < ev->size(); ++v)
 		{
 			delete (*ev)[v];
 			(*ev)[v] = 0x0;
@@ -216,54 +223,58 @@ int main(int argc, const char *argv[])
 	return 0;
 }
 
-bool KeepEvent(CRYParticle* p, double &newX, double &newY, double &newE)
+bool KeepEvent(CRYParticle *p, double &newX, double &newY, double &newE)
 {
 	// If we only want events for network training we insist that the x-direction value is above some threshold
-	if(forTraining && (p->u() < xDirThreshold)) return false;
+	if (forTraining && (p->u() < xDirThreshold))
+		return false;
 
 	// The muons are generated at "sea level" we treat this as being the level of the water in the pit!
 	// Apply muon energy threshold for traversing water overburden ~ E_thres = (2.2 Mev/cm * 100) * 50m = 10 GeV.
-	if(p->ke() < (220*overburden)) return false;
+	if (p->ke() < (220 * overburden))
+		return false;
 
 	// Look at slices in z over the height of the detector and check to see if the x,y position
 	// is within the disc defined by the detector radius
 	bool withinADisc = false;
 	int nSlice = 100;
-	for(int i = 0; i < nSlice; ++i)
+	for (int i = 0; i < nSlice; ++i)
 	{
-		double depth = -1*(overburden) -i*(2.0*detHalfHeight/((double)nSlice));
-		double nSteps = depth/p->w();
-		double curX = p->x() + p->u()*nSteps;  
-		double curY = p->y() + p->v()*nSteps;  
-		double curR = sqrt(curX*curX + curY*curY);
+		double depth = -1 * (overburden)-i * (2.0 * detHalfHeight / ((double)nSlice));
+		double nSteps = depth / p->w();
+		double curX = p->x() + p->u() * nSteps;
+		double curY = p->y() + p->v() * nSteps;
+		double curR = sqrt(curX * curX + curY * curY);
 
 		// If the muon is within the detector slice, break out and keep the event.
-		if(curR < detRadius){
+		if (curR < detRadius)
+		{
 			withinADisc = true;
 			break;
 		}
 	}
-	if(!withinADisc) return false;
+	if (!withinADisc)
+		return false;
 
 	// At this point we have decided that we want the event.
 	// Now we need to work out the x, y and E 1m above the detector. This means we don't need to use
 	// GEANT to simulate the overburden of water, which it turns out is rather slow.
-	double nSteps = -1*(overburden-1)/p->w();
-	newX = p->x() + p->u()*nSteps;
-	newY = p->y() + p->v()*nSteps;
-	
-	// For energy we work out the path length between where we started and ended. 
+	double nSteps = -1 * (overburden - 1) / p->w();
+	newX = p->x() + p->u() * nSteps;
+	newY = p->y() + p->v() * nSteps;
+
+	// For energy we work out the path length between where we started and ended.
 	// arXiv hep-ph/0106010v1 suggests 2.2MeV/cm should be ok up to 100GeV, so let's use that for now.
-	double pathLength = (p->x()-newX)*(p->x()-newX) + (p->y()-newY)*(p->y()-newY) + (overburden-1)*(overburden-1);
+	double pathLength = (p->x() - newX) * (p->x() - newX) + (p->y() - newY) * (p->y() - newY) + (overburden - 1) * (overburden - 1);
 	pathLength = sqrt(pathLength);
 	pathLength = pathLength * 100; // Convert to cm.
-	newE = p->ke() - pathLength*2.2;
+	newE = p->ke() - pathLength * 2.2;
 
 	// Check to see if the energy is sensible, as a high angle muon could reach zero even given the cut
 	// at the start of this function. We are at minimum 1m above the detector now, so make sure we have
 	// at least 220 MeV
-	if(newE < 220) return false;
+	if (newE < 220)
+		return false;
 
 	return true;
 }
-
