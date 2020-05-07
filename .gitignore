@@ -1,5 +1,6 @@
-cosmicGen
+cosmicgen
 CMakeCache.txt
 cmake_install.cmake
 CMakeFiles/
 Makefile
+config/xsecs*.xml

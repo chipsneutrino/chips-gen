@@ -14,9 +14,9 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
-#---Add the cosmicGen executable and link to all the required libraries
-add_executable(cosmicGen src/cosmicGen.cc)
-target_link_libraries(cosmicGen $ENV{CRYDIR}/lib/libCRY.a)
+#---Add the cosmicgen executable and link to all the required libraries
+add_executable(cosmicgen src/cosmicgen.cc)
+target_link_libraries(cosmicgen $ENV{CRYDIR}/lib/libCRY.a)
 
 #---Download large data files to the config directory
 if(EXISTS $ENV{CHIPSGEN}/config/xsecs_G0000b00000.xml)
