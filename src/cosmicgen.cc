@@ -75,7 +75,7 @@ bool KeepEvent(CRYParticle *p, double &newX, double &newY, double &newE);
 int main(int argc, const char *argv[])
 {
 	std::string configFile = std::getenv("CHIPSGEN");
-	configFile += "/config/default.conf"; // default path to configuration file
+	configFile += "/config/cry.conf"; // default path to configuration file
 	int nEv = 1000;						  // default number of cosmic-ray events to produce
 	std::string geoType = "chips_1200";	  // default geometry to use
 
